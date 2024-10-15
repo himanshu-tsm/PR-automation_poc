@@ -1,12 +1,4 @@
 name: PR Automation
-
-on:
-  pull_request:
-    branches:
-      - main
-
-name: PR Automation
-
 on:
   pull_request:
     branches:
