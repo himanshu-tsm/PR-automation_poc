@@ -44,6 +44,9 @@ jobs:
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
+      - name: Create Results Directory
+        run: mkdir -p results
+
       - name: List Results Directory
         run: ls -R results
 
