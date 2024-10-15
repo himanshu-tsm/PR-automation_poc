@@ -22,14 +22,14 @@ jobs:
       if: success()
       run: |
         curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "Build & Test Passed on PR #${{ github.event.number }}: Ready for Approval."}' \
+        --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
         ${{ secrets.SLACK_WEBHOOK_URL }}
 
     - name: Notify Slack - Test Failed
       if: failure()
       run: |
         curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "Build & Test Failed on PR #${{ github.event.number }}: Check logs for more info."}' \
+        --data '{"text": "PR #${{ github.event.number }}: Build or Tests Failed. <${{ github.event.pull_request.html_url }}|View PR>"}' \
         ${{ secrets.SLACK_WEBHOOK_URL }}
 
   approval:
@@ -41,13 +41,13 @@ jobs:
     - name: Request Approval
       uses: ridedott/merge-me-action@v2
       with:
-        github-token: ${{ secrets.DGITHUB_TOKEN }}
-        pull-request-number: ${{ github.event.number }}
+        GITHUB_TOKEN: ${{ secrets.DGITHUB_TOKEN }}
+        MERGE_METHOD: 'merge'
 
     - name: Notify Slack - Approval Required
       run: |
         curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Ready for Review. Please approve or reject."}' \
+        --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
         ${{ secrets.SLACK_WEBHOOK_URL }}
 
   merge:
@@ -59,3 +59,9 @@ jobs:
     - name: Merge Pull Request
       run: |
         gh pr merge ${{ github.event.pull_request.number }} --merge
+
+    - name: Notify Slack - PR Merged
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+        --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
+        ${{ secrets.SLACK_WEBHOOK_URL }}
