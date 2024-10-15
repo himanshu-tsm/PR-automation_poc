@@ -10,44 +10,43 @@ permissions:
   statuses: write
   checks: write
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Build Docker Image
-      run: docker build -t sample-nodejs-app .
+      - name: Build Docker Image
+        run: docker build -t sample-nodejs-app .
 
-    - name: Run Tests
-      run: docker run --rm sample-nodejs-app npm test
+      - name: Run Tests
+        run: docker run --rm sample-nodejs-app npm test
 
+      - name: Notify Slack - Test Passed
+        if: ${{ success() }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
-    - name: Notify Slack - Test Passed
-      if: success()
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
-
-    - name: Notify Slack - Test Failed
-      if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build or Tests Failed. <${{ github.event.pull_request.html_url }}|View PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - Test Failed
+        if: ${{ failure() }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build or Tests Failed. <${{ github.event.pull_request.html_url }}|View PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   codeql:
     runs-on: ubuntu-latest
     needs: build
-    if: success()
+    if: ${{ success() }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
       - name: Set up CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -58,7 +57,8 @@ jobs:
           npm install  # Ensure dependencies are installed before analysis
 
       - name: Run CodeQL Analysis
-        uses: github/codeql-action/analyze@v3  # Updated to v3
+        uses: github/codeql-action/analyze@v3
+
       - name: Convert CodeQL Report to PDF
         run: |
           # Convert XML to PDF (requires a conversion tool/script)
@@ -66,27 +66,27 @@ jobs:
           ./convert_xml_to_pdf.sh results/codeql-results.xml results/codeql-report.pdf
 
       - name: Upload CodeQL Reports to Slack
-        if: success() || failure()
+        if: ${{ success() || failure() }}
         run: |
           # Upload XML report to Slack
           curl -F file=@results/codeql-results.xml -F "initial_comment=CodeQL XML Report for PR #${{ github.event.number }}" \
           -F channels=${{ secrets.SLACK_CHANNEL }} \
           -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" https://slack.com/api/files.upload
-        
+
           # Upload PDF report to Slack
           curl -F file=@results/codeql-report.pdf -F "initial_comment=CodeQL PDF Report for PR #${{ github.event.number }}" \
           -F channels=${{ secrets.SLACK_CHANNEL }} \
           -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" https://slack.com/api/files.upload
 
       - name: Notify Slack - Test and Scan Passed
-        if: success()
+        if: ${{ success() }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed, and CodeQL Scan Completed Successfully. Reports attached. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify Slack - Test or Scan Failed
-        if: failure()
+        if: ${{ failure() }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Build, Tests, or CodeQL Scan Failed. Reports attached. <${{ github.event.pull_request.html_url }}|View PR>"}' \
@@ -95,21 +95,24 @@ jobs:
   approval:
     needs: build
     runs-on: ubuntu-latest
-    if: success()
+    if: ${{ success() }}
 
     steps:
-    - name: Request Approval
-      uses: ridedott/merge-me-action@v2
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Use correct token
-        MERGE_METHOD: 'merge'
-        GITHUB_LOGIN: 'himanshu-tsm'  # Specify the login or leave this for all users
+      - name: Request Approval
+        uses: ridedott/merge-me-action@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_METHOD: 'merge'
+          GITHUB_LOGIN: 'himanshu-tsm'
+          ENABLE_GITHUB_API_PREVIEW: false
+          ENABLED_FOR_MANUAL_CHANGES: false
+          MAXIMUM_RETRIES: 3
 
-    - name: Notify Slack - Approval Required
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - Approval Required
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   merge:
     runs-on: ubuntu-latest
@@ -125,5 +128,3 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
-        
-
