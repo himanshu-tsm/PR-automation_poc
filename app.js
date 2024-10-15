@@ -5,8 +5,8 @@ app.get('/', (req, res) => {
   res.send('Hello, PR Automation!');
 });
 
-app.listen(3000, () => {
+const server = app.listen(3000, () => {
   console.log('Server running on port 3000');
 });
 
-module.exports = app;
+module.exports = { app, server }; // Export the server instance
