@@ -42,17 +42,17 @@ jobs:
     if: success()
 
     steps:
-    - name: Request Approval
-      uses: ridedott/merge-me-action@v2
-      with:
-        GITHUB_TOKEN: ${{ secrets.DGITHUB_TOKEN }}
-        MERGE_METHOD: 'merge'
+      - name: Request Approval
+        uses: ridedott/merge-me-action@v2
+        with:
+          opts:
+              auth: ${{ secrets.DGITHUB_TOKEN }
 
-    - name: Notify Slack - Approval Required
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - Approval Required
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   merge:
     runs-on: ubuntu-latest
