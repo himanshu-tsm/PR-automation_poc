@@ -41,7 +41,7 @@ jobs:
     - name: Request Approval
       uses: ridedott/merge-me-action@v2
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.DGITHUB_TOKEN }}
         MERGE_METHOD: 'merge'
 
     - name: Notify Slack - Approval Required
