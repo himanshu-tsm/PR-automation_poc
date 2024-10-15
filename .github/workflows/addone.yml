@@ -69,7 +69,7 @@ jobs:
         uses: ridedott/merge-me-action@v2
         with:
           GITHUB_TOKEN: ${{ secrets.PAT }}
-          MERGE_METHOD: 'merge'
+          MERGE_METHOD: 'squash'
           GITHUB_LOGIN: 'himanshu-tsm'
           ENABLE_GITHUB_API_PREVIEW: false
           ENABLED_FOR_MANUAL_CHANGES: false
