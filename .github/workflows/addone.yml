@@ -63,8 +63,10 @@ jobs:
     - name: Request Approval
       uses: ridedott/merge-me-action@v2
       with:
-        GITHUB_TOKEN: ${{ secrets.DGITHUB_TOKEN }}   # Correctly using GITHUB_TOKEN
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Use correct token
         MERGE_METHOD: 'merge'
+        GITHUB_LOGIN: 'himanshu-tsm'  # Specify the login or leave this for all users
+        AUTHORIZE_ALL_CONTRIBUTORS: true 
 
     - name: Notify Slack - Approval Required
       run: |
