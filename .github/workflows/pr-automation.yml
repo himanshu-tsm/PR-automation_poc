@@ -23,10 +23,7 @@ jobs:
         run: |
           docker run --rm sample-nodejs-app npm test
 
-      - name: Post Comment on PR
-        if: success()
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "Build and tests passed. Ready for review."
+
 
   merge:
     needs: build
