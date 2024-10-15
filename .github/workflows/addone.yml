@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, closed]
 
+permissions:
+  pull-requests: write
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
