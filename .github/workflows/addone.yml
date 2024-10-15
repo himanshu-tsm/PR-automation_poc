@@ -49,11 +49,11 @@ jobs:
       - name: Create Results Directory
         run: mkdir -p results
 
-      - name: Check if CodeQL Output Exists
+      - name: CheckIfCodeQLOutputExists
         run: ls -R results || echo "No CodeQL results found."
 
       - name: Upload XML report to Slack
-        if: ${{ success() && (steps.Check if CodeQL Output Exists.outputs.file_existence == 'true') }}
+        if: ${{ success() && steps.CheckIfCodeQLOutputExists.outcome == 'success' }}
         run: |
           curl -F file=@results/codeql-results.sarif -F "initial_comment=CodeQL SARIF Report" \
           -F channels=${{ secrets.SLACK_CHANNEL }} \
