@@ -23,8 +23,6 @@ jobs:
         run: |
           docker run --rm sample-nodejs-app npm test
 
-
-
   merge:
     needs: build
     runs-on: ubuntu-latest
