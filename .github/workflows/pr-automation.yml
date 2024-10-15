@@ -24,33 +24,6 @@ jobs:
         run: |
           docker run --rm sample-nodejs-app npm test
 
-      # Post build and test status to Slack
-      - name: Notify Slack
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            STATUS="Build and tests passed"
-          else
-            STATUS="Build or tests failed"
-          fi
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"PR #${{ github.event.number }}: $STATUS\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Post Comment on PR
-        if: success()
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "Build and tests passed. Ready for review."
-
-
-      # Post build and test status to Slack
-      - name: Notify Slack
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            STATUS="Build and tests passed"
-          else
-            STATUS="Build or tests failed"
-          fi
-          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"PR #${{ github.event.number }}: $STATUS\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
 
   merge:
     needs: build
