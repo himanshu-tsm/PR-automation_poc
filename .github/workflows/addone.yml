@@ -55,6 +55,7 @@ jobs:
       - name: Request Approval
         uses: ridedott/merge-me-action@v2
         with:
+          GITHUB_LOGIN: dependabot-preview
           GITHUB_TOKEN: ${{ secrets.DGITHUB_TOKEN }}
           MERGE_METHOD: 'merge'
 
