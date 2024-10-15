@@ -13,28 +13,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Build Docker Image
-      run: docker build -t sample-nodejs-app .
+      - name: Build Docker Image
+        run: docker build -t sample-nodejs-app .
 
-    - name: Run Tests
-      run: docker run --rm sample-nodejs-app npm test
+      - name: Run Tests
+        run: docker run --rm sample-nodejs-app npm test
 
-    - name: Notify Slack - Test Passed
-      if: success()
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - Test Passed
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build & Tests Passed. Ready for Approval. <${{ github.event.pull_request.html_url }}|View PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
-    - name: Notify Slack - Test Failed
-      if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Build or Tests Failed. <${{ github.event.pull_request.html_url }}|View PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - Test Failed
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Build or Tests Failed. <${{ github.event.pull_request.html_url }}|View PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   approval:
     needs: build
@@ -46,7 +46,7 @@ jobs:
         uses: ridedott/merge-me-action@v2
         with:
           opts:
-              auth: ${{ secrets.DGITHUB_TOKEN }
+            auth: ${{ secrets.DGITHUB_TOKEN }}
 
       - name: Notify Slack - Approval Required
         run: |
@@ -60,12 +60,12 @@ jobs:
     if: github.event.pull_request.merged == 'false' && success()
 
     steps:
-    - name: Merge Pull Request
-      run: |
-        gh pr merge ${{ github.event.pull_request.number }} --merge
+      - name: Merge Pull Request
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --merge
 
-    - name: Notify Slack - PR Merged
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-        --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
-        ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack - PR Merged
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
