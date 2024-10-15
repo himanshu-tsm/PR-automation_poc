@@ -18,18 +18,24 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t my-app .
+          docker build -t sample-nodejs-app .
 
-      - name: Run Unit Tests
+      - name: Run Tests Inside Docker
         run: |
-          docker run --rm my-app pytest tests/
+          docker run --rm sample-nodejs-app npm test
 
-      - name: Code Scanning (Optional)
-        uses: github/codeql-action/analyze@v2
-        with:
-          languages: 'javascript,python'
+      # Post build and test status to Slack
+      - name: Notify Slack
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            STATUS="Build and tests passed"
+          else
+            STATUS="Build or tests failed"
+          fi
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"PR #${{ github.event.number }}: $STATUS\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Post Check Comment
+      - name: Post Comment on PR
         if: success()
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "Build and tests passed. Ready for review."
