@@ -43,25 +43,21 @@ jobs:
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          output: results/codeql-results.sarif
 
       - name: Create Results Directory
         run: mkdir -p results
 
-      - name: List Results Directory
-        run: ls -R results
+      - name: Check if CodeQL Output Exists
+        run: ls -R results || echo "No CodeQL results found."
 
       - name: Upload XML report to Slack
-        if: ${{ success() }}
+        if: ${{ success() && (steps.Check if CodeQL Output Exists.outputs.file_existence == 'true') }}
         run: |
-          curl -F file=@results/codeql-results.xml -F "initial_comment=CodeQL XML Report" \
+          curl -F file=@results/codeql-results.sarif -F "initial_comment=CodeQL SARIF Report" \
           -F channels=${{ secrets.SLACK_CHANNEL }} \
           -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" https://slack.com/api/files.upload
-      - name: Notify Slack - Test or Scan Failed
-        if: ${{ failure() }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text": "PR #${{ github.event.number }}: Build, Tests, or CodeQL Scan Failed. Reports attached. <${{ github.event.pull_request.html_url }}|View PR>"}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
 
   approval:
     needs: build
