@@ -52,7 +52,6 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
-          mode: advanced
 
       - name: Build the code
         run: |
