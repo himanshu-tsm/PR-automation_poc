@@ -78,6 +78,7 @@ jobs:
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Wait for Approval (12 hours)
+        id: approval_check  # Set an ID to reference this step later
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           END_TIME=$((SECONDS+43200))  # 12 hours in seconds
@@ -106,7 +107,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: ${{ env.approved == 'true' }}
+    if: ${{ steps.approval_check.outputs.approved == 'true' }}  # Use output from approval step
 
     steps:
       - name: Merge Pull Request
