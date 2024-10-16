@@ -78,12 +78,15 @@ jobs:
         run: |
           echo "Waiting for approval for 12 hours..."
           sleep 43200  # Sleep for 12 hours (43200 seconds)
-        
+
       - name: Check Approval Status
         id: approval_check
+        env:
+          PAT: ${{ secrets.PAT }}  # Use the PAT secret for authentication
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          REVIEW_STATE=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.author.login == "himanshu-tsm")) | .[0].state')
+          # Use the GitHub CLI to check the approval status
+          REVIEW_STATE=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.author.login == "himanshu-tsm")) | .[0].state' --token $PAT)
 
           echo "Review State: $REVIEW_STATE"
 
@@ -96,12 +99,12 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: env.approved == 'true'
+    if: ${{ env.approved == 'true' }}
 
     steps:
       - name: Merge Pull Request
         env:
-          GH_TOKEN: ${{ secrets.PAT }}  # Set the GitHub token
+          GH_TOKEN: ${{ secrets.PAT }}  # Set the GitHub token using the PAT secret
         run: gh pr merge ${{ github.event.pull_request.number }} --merge
 
       - name: Notify Slack - PR Merged
