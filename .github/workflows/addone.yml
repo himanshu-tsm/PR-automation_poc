@@ -66,8 +66,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: codeql
     if: ${{ success() }}
-    env:
-      GH_TOKEN: ${{ secrets.PAT }}  # Set the GitHub token using the PAT secret
+    outputs:
+      approved: ${{ steps.approval_check.outputs.approved }}  # Set the output variable
 
     steps:
       - name: Checkout Code
@@ -109,7 +109,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: ${{ steps.approval_check.outputs.approved == 'true' }}  # Use output from approval step
+    if: ${{ needs.approval.outputs.approved == 'true' }}  # Correctly reference the output from the approval job
 
     steps:
       - name: Merge Pull Request
