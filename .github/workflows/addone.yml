@@ -60,9 +60,10 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" https://slack.com/api/files.upload
 
   approval:
-    needs: build
+    needs: codeql
     runs-on: ubuntu-latest
     if: ${{ success() }}
+    timeout-minutes: 720  # 12 hours
 
     steps:
       - name: Request Approval
