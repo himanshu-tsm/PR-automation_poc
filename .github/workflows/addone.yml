@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
   pull_request_review:
     types: [submitted]
+  workflow_dispatch:  # Allow manual trigger
 
 permissions:
   contents: write
@@ -73,17 +74,50 @@ jobs:
           --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
+      - name: Wait for Approval (12 hours)
+        run: |
+          echo "Waiting for approval for 12 hours..."
+          sleep 43200  # Sleep for 12 hours (43200 seconds)
+        
+      - name: Check Approval Status
+        id: approval_check
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          REVIEW_STATE=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.author.login == "himanshu-tsm")) | .[0].state')
+
+          echo "Review State: $REVIEW_STATE"
+
+          if [ "$REVIEW_STATE" == "APPROVED" ]; then
+            echo "approved=true" >> $GITHUB_ENV
+          else
+            echo "approved=false" >> $GITHUB_ENV
+          fi
+
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: github.event.pull_request.merged == false && github.event.action == 'submitted' && github.event.review.state == 'approved'
+    if: env.approved == 'true'
 
     steps:
       - name: Merge Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}  # Set the GitHub token
         run: gh pr merge ${{ github.event.pull_request.number }} --merge
 
       - name: Notify Slack - PR Merged
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  timeout:
+    runs-on: ubuntu-latest
+    needs: approval
+    if: ${{ success() }}
+
+    steps:
+      - name: Notify Slack - Timeout
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text": "PR #${{ github.event.number }}: Approval not received within 12 hours. Please review and approve."}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
