@@ -99,7 +99,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: ${{ steps.approval_check.outputs.approved == 'true' }}
+    if: ${{ env.approved == 'true' }}
 
     steps:
       - name: Merge Pull Request
