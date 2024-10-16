@@ -2,7 +2,9 @@ name: PR Automation with Docker, Tests, Slack, and Approval
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   contents: write
@@ -60,22 +62,11 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.SLACK_TOKEN }}" https://slack.com/api/files.upload
 
   approval:
-    needs: codeql
     runs-on: ubuntu-latest
+    needs: codeql
     if: ${{ success() }}
-    timeout-minutes: 720  # 12 hours
 
     steps:
-      - name: Request Approval
-        uses: ridedott/merge-me-action@v2
-        with:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          MERGE_METHOD: 'squash'
-          GITHUB_LOGIN: 'himanshu-tsm'
-          ENABLE_GITHUB_API_PREVIEW: false
-          ENABLED_FOR_MANUAL_CHANGES: false
-          MAXIMUM_RETRIES: 3
-
       - name: Notify Slack - Approval Required
         run: |
           curl -X POST -H 'Content-type: application/json' \
@@ -85,7 +76,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: github.event.pull_request.merged == false && github.event.action == 'submitted' && success()
+    if: github.event.pull_request.merged == false && github.event.action == 'submitted' && github.event.review.state == 'approved'
 
     steps:
       - name: Merge Pull Request
