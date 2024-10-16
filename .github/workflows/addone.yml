@@ -68,23 +68,23 @@ jobs:
     if: ${{ success() }}
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3  # Ensure code is checked out
+
       - name: Notify Slack - Approval Required
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Build Passed. Approval Required. <${{ github.event.pull_request.html_url }}|Review and Approve PR>"}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      - name: Wait for Approval or Rejection (up to 12 hours)
-        id: wait_for_approval
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}  # Set the GitHub token using the PAT secret
+      - name: Wait for Approval (12 hours)
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           END_TIME=$((SECONDS+43200))  # 12 hours in seconds
-
+          
           while [ $SECONDS -lt $END_TIME ]; do
             # Check the approval status
-            REVIEW_STATE=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.author.login == "himanshu-tsm")) | .[0].state')
+            REVIEW_STATE=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews | map(select(.author.login == "himanshu-tsm")) | .[0].state' --token ${{ secrets.PAT }})
 
             echo "Review State: $REVIEW_STATE"
 
@@ -99,14 +99,14 @@ jobs:
             # Wait for 5 minutes before checking again
             sleep 300
           done
-
+          
           # If we reach this point, it means we timed out without approval or rejection
           echo "approved=false" >> $GITHUB_OUTPUT  # Set output variable for timed out
 
   merge:
     runs-on: ubuntu-latest
     needs: approval
-    if: ${{ needs.approval.outputs.approved == 'true' }}  # Reference the output here
+    if: ${{ env.approved == 'true' }}
 
     steps:
       - name: Merge Pull Request
@@ -118,16 +118,4 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text": "PR #${{ github.event.number }}: Successfully Merged. <${{ github.event.pull_request.html_url }}|View Merged PR>"}' \
-          ${{ secrets.SLACK_WEBHOOK_URL }}
-
-  timeout:
-    runs-on: ubuntu-latest
-    needs: approval
-    if: ${{ needs.approval.outputs.approved == 'false' }}
-
-    steps:
-      - name: Notify Slack - Timeout
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data '{"text": "PR #${{ github.event.number }}: Approval not received within 12 hours. Please review and approve."}' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
